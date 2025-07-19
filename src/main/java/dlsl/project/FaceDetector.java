@@ -13,7 +13,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferByte;
 
 public class FaceDetector {
     private static final String CASCADE_PATH = "resources/haarcascade_frontalface_default.xml";
@@ -104,20 +103,12 @@ public class FaceDetector {
             }
         });
 
-        JButton snapshotButton = new JButton("Take snapshot");
-        snapshotButton.addActionListener(e -> {
-            if (isCameraRunning) {
-                // Add snapshot logic here
-                System.out.println("Snapshot");
-            } else {
-                System.out.println("Camera must be running to take snapshot.");
-            }
-        });
+        SnapshotButton snapshotButton = new SnapshotButton("Take snapshot", () -> isCameraRunning, SNAPSHOT_DIR, ()-> camera, () ->window);
 
         // Add the start and stop button to the bottom panel
         bottomButtonsPanel.add(startButton);
         bottomButtonsPanel.add(endButton);
-        bottomButtonsPanel.add(snapshotButton);
+        bottomButtonsPanel.add(snapshotButton.getSnapshotButton());
         return bottomButtonsPanel;
     }
 
@@ -142,7 +133,7 @@ public class FaceDetector {
 
         camera = new VideoCapture(0);
         if (!camera.isOpened()) {
-            showError("ERR at line 81 in FaceDetector.java. Message: camera failed to open.");
+            Utils.showError("ERR at line 81 in FaceDetector.java. Message: camera failed to open.");
             isCameraRunning = false;
             return;
         }
@@ -165,7 +156,7 @@ public class FaceDetector {
                     continue;
                 }
                 detectAndDrawFaces(frame);
-                BufferedImage image = matToBufferedImage(frame);
+                BufferedImage image = Utils.matToBufferedImage(frame);
                 SwingUtilities.invokeLater(() -> {
                     videoPanel.setIcon(new ImageIcon(image));
                     videoPanel.repaint();
@@ -206,16 +197,5 @@ public class FaceDetector {
         });
 
         System.out.println("Camera feed stopped and panel cleared.");
-    }
-
-    private static BufferedImage matToBufferedImage(Mat mat) {
-        int type = (mat.channels() == 1) ? BufferedImage.TYPE_BYTE_GRAY : BufferedImage.TYPE_3BYTE_BGR;
-        BufferedImage image = new BufferedImage(mat.width(), mat.height(), type);
-        mat.get(0, 0, ((DataBufferByte) image.getRaster().getDataBuffer()).getData());
-        return image;
-    }
-
-    private static void showError(String errorMessage) {
-        JOptionPane.showMessageDialog(null, errorMessage, "Error", JOptionPane.ERROR_MESSAGE);
     }
 }
